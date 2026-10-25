@@ -9,9 +9,13 @@ require('dotenv').config();
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
+
+// Servir archivos estáticos (incluyendo index.html)
+app.use(express.static(path.join(__dirname)));
 
 // ---------- CORS ----------
 const CORS = {
@@ -264,6 +268,16 @@ app.post('/participant/:token/wishlist', async (req, res) => {
   const wishText = wishlist.map(s => String(s).trim()).filter(Boolean).slice(0, 5).join('\n');
   await sb.from('participants').update({ wishlist: wishText }).eq('id', p.id);
   return jsonRes(res, { success: true });
+});
+
+// Health check para Render
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Fallback para SPA (sirve index.html para cualquier otra ruta GET)
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 8000;
